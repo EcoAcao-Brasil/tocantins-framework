@@ -1,5 +1,5 @@
 """
-Setup script for the Impact Score Calculator package.
+Setup script for the Tocantins Index calculator package.
 """
 
 from setuptools import setup, find_packages
@@ -13,13 +13,13 @@ setup(
     version="1.0.0",
     author="Isaque Carvalho Borges",
     author_email="isaque@ecoacaobrasil.org",
-    description="Package to calculate Tocantins Index's Impact Score for quantification of intra-urban heat anomalies impact over surrounding areas in Landsat imagery",
+    description="Package to calculate the Tocantins Index for compounded quantification of intra-urban heat anomalies in Landsat imagery",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/EcoAcao-Brasil/Tocantins-Index/src/impact-score",
     project_urls={
-        "Bug Reports": "https://github.com/EcoAcao-Brasil/Tocantins-Index/src/impact-score/issues",
-        "Source": "https://github.com/EcoAcao-Brasil/Tocantins-Index/src/impact-score",
+        "Bug Reports": ".....", # Yet to be changed by the actual URL
+        "Source": ".....",  # Yet to be changed by the actual URL
     },
     package_dir={"": "src"},
     packages=find_packages(where="src"),
