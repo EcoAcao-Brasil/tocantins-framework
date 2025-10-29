@@ -18,7 +18,7 @@ Components:
 - Calculator: Complete feature extraction pipeline
 """
 
-from .calculator import TocantinsIndexCalculator, calculate_tocantins_index
+from .calculator import TocantinsFrameworkCalculator, calculate_tocantins_framework
 from .preprocessing import LandsatPreprocessor
 from .anomaly_detection import AnomalyDetector
 from .morphology import MorphologyProcessor
