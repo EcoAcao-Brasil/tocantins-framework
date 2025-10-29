@@ -1,35 +1,30 @@
 """
-A 'calculator' that runs the complete analysis pipeline.
+A 'calculator' that runs the complete Tocantins Index analysis pipeline.
 
-It integrates preprocessing, anomaly detection, morphology, metrics, and I/O.
+Integrates preprocessing, anomaly detection, morphology, metrics, and I/O.
 """
 
 import logging
 from typing import Optional, Dict
 
 import pandas as pd
+import numpy as np
 
 from .preprocessing import LandsatPreprocessor
 from .anomaly_detection import AnomalyDetector
 from .morphology import MorphologyProcessor
-from .metrics import ImpactScoreMetrics
+from .metrics import MetricsCalculator
 from .io import ResultsWriter
 
 logger = logging.getLogger(__name__)
 
 
-class ImpactScoreCalculator:
+class TocantinsIndexCalculator:
     """
-    Main calculator for Impact Score analysis of thermal anomalies.
+    Main calculator for the Tocantins Index analysis.
     
-    Orchestrates the complete pipeline from raw Landsat imagery to
-    quantified anomaly impact scores.
-    
-    Attributes:
-        k_threshold: Threshold multiplier for residual-based anomaly detection.
-        rf_params: Random Forest model configuration.
-        spatial_params: Spatial processing parameters for morphology operations.
-        impact_params: Impact score calculation parameters.
+    Orchestrates the pipeline from raw Landsat imagery to the final Tocantins Index,
+    which integrates Impact Score and Severity Score.
     """
     
     def __init__(
@@ -37,27 +32,21 @@ class ImpactScoreCalculator:
         rf_params: Optional[Dict] = None,
         k_threshold: float = 1.5,
         spatial_params: Optional[Dict] = None,
-        impact_params: Optional[Dict] = None
+        impact_params: Optional[Dict] = None,
+        severity_params: Optional[Dict] = None
     ):
-        """
-        Initialize Impact Score Calculator.
-        
-        Args:
-            rf_params: Random Forest model parameters.
-            k_threshold: Threshold multiplier for residual detection.
-            spatial_params: Spatial processing parameters.
-            impact_params: Impact score calculation parameters.
-        """
         self.k_threshold = k_threshold
         
         self.preprocessor = LandsatPreprocessor()
         self.detector = AnomalyDetector(k_threshold, rf_params)
         self.morph_processor = MorphologyProcessor(spatial_params)
-        self.metrics_calculator = ImpactScoreMetrics(impact_params)
+        self.metrics = MetricsCalculator(impact_params or severity_params)
         
         self.full_data = None
         self.raster_meta = {}
         self.impact_scores = None
+        self.severity_scores = None
+        self.feature_set = None
         
         self._m1_hot_2d = None
         self._m1_cold_2d = None
@@ -71,21 +60,11 @@ class ImpactScoreCalculator:
     def run_complete_analysis(
         self,
         tif_path: str,
-        output_dir: str = "impact_score_results",
+        output_dir: str = "tocantins_index_results",
         save_results: bool = True
     ) -> bool:
-        """
-        Execute complete analysis pipeline.
-        
-        Args:
-            tif_path: Path to input Landsat GeoTIFF.
-            output_dir: Output directory path.
-            save_results: Whether to save results to disk.
-            
-        Returns:
-            True if analysis completed successfully, False otherwise.
-        """
-        logger.info("Starting Impact Score analysis")
+        """Execute complete Tocantins Index analysis pipeline."""
+        logger.info("Starting Tocantins Index analysis")
         
         try:
             self._run_pipeline(tif_path)
@@ -103,21 +82,13 @@ class ImpactScoreCalculator:
             return False
     
     def _run_pipeline(self, tif_path: str) -> None:
-        """
-        Execute analysis pipeline steps.
-        
-        Args:
-            tif_path: Path to input Landsat GeoTIFF.
-        """
         self.full_data, self.raster_meta = self.preprocessor.load_imagery(tif_path)
         
         lst_2d = self.preprocessor.get_lst_2d()
         valid_mask_2d = self.preprocessor.get_valid_mask_2d()
         
         self._m1_hot_2d, self._m1_cold_2d, self.full_data = \
-            self.detector.detect_statistical_anomalies(
-                self.full_data, lst_2d, valid_mask_2d
-            )
+            self.detector.detect_statistical_anomalies(self.full_data, lst_2d, valid_mask_2d)
         
         self.detector.train_model(self.full_data)
         
@@ -125,10 +96,7 @@ class ImpactScoreCalculator:
             self.detector.calculate_residuals(self.full_data, lst_2d)
         
         core_hot, core_cold = self.detector.refine_anomaly_cores(
-            self._m1_hot_2d,
-            self._m1_cold_2d,
-            self._residual_2d,
-            valid_mask_2d
+            self._m1_hot_2d, self._m1_cold_2d, self._residual_2d, valid_mask_2d
         )
         
         self._unified_hot_cores, self._unified_cold_cores, _, _ = \
@@ -138,87 +106,132 @@ class ImpactScoreCalculator:
         
         self._coherent_hot_influence, self._coherent_cold_influence = \
             self.morph_processor.grow_influence_zones(
-                self._unified_hot_cores,
-                self._unified_cold_cores,
-                self._residual_2d,
-                valid_mask_2d,
-                training_stats['residual_std'],
-                self.k_threshold
+                self._unified_hot_cores, self._unified_cold_cores,
+                self._residual_2d, valid_mask_2d,
+                training_stats['residual_std'], self.k_threshold
             )
         
         self._zone_classification = self.morph_processor.create_classification_map(
             lst_2d.shape,
-            self._coherent_cold_influence,
-            self._coherent_hot_influence,
-            self._unified_cold_cores,
-            self._unified_hot_cores
+            self._coherent_cold_influence, self._coherent_hot_influence,
+            self._unified_cold_cores, self._unified_hot_cores
         )
         
         spatial_params = self.morph_processor.params
+        pixel_size = self.raster_meta.get('pixel_size', 30.0)
+        connectivity = spatial_params['connectivity']
         
-        self.impact_scores = self.metrics_calculator.calculate_scores(
-            self._unified_hot_cores,
-            self._unified_cold_cores,
-            self._coherent_hot_influence,
-            self._coherent_cold_influence,
-            self._residual_2d,
-            training_stats['residual_std'],
-            self.raster_meta.get('pixel_size', 30.0),
-            spatial_params['connectivity']
+        self.impact_scores = self.metrics.calculate_impact_scores(
+            self._unified_hot_cores, self._unified_cold_cores,
+            self._coherent_hot_influence, self._coherent_cold_influence,
+            self._residual_2d, training_stats['residual_std'],
+            pixel_size, connectivity
         )
+        
+        self.severity_scores = self.metrics.calculate_severity_scores(
+            self._unified_hot_cores, self._unified_cold_cores,
+            self._residual_2d, training_stats['residual_std'],
+            pixel_size, connectivity
+        )
+        
+        self._merge_feature_set()
+    
+    def _merge_feature_set(self) -> None:
+        """
+        Merge Impact and Severity scores into unified feature set.
+        
+        Creates a complete feature table for ML applications with all metrics
+        from both IS and SS calculations preserved.
+        """
+        logger.info("Merging features for ML pipeline")
+        
+        if self.impact_scores is None or self.impact_scores.empty:
+            logger.warning("No Impact Scores available")
+            self.feature_set = pd.DataFrame()
+            return
+        
+        if self.severity_scores is None or self.severity_scores.empty:
+            logger.warning("No Severity Scores available")
+            self.feature_set = pd.DataFrame()
+            return
+        
+        merged = pd.merge(
+            self.impact_scores,
+            self.severity_scores,
+            on=['Anomaly_ID', 'Type'],
+            suffixes=('', '_core')
+        )
+        
+        # Rename for clarity
+        merged = merged.rename(columns={
+            'Centroid_Row': 'Centroid_Row',
+            'Centroid_Col': 'Centroid_Col',
+            'Centroid_Row_core': 'Core_Centroid_Row',
+            'Centroid_Col_core': 'Core_Centroid_Col',
+            'Area_m2': 'Influence_Area_m2',
+            'Area_pixels': 'Influence_Area_pixels'
+        })
+        
+        # Sort by combined importance (product of absolute values)
+        merged['Importance'] = np.abs(merged['IS']) * np.abs(merged['SS'])
+        merged = merged.sort_values(by='Importance', ascending=False).reset_index(drop=True)
+        
+        self.feature_set = merged
+        
+        logger.info(f"Created feature set with {len(self.feature_set)} anomalies")
     
     def _save_all_results(self, output_dir: str) -> None:
-        """
-        Save all analysis results.
-        
-        Args:
-            output_dir: Output directory path.
-        """
         writer = ResultsWriter(self.raster_meta)
-        writer.save_all(
-            output_dir,
-            self.impact_scores,
-            self._zone_classification,
-            self._residual_2d
-        )
+        writer.save_all(output_dir, self.impact_scores, self._zone_classification, self._residual_2d)
+        
+        from pathlib import Path
+        output_path = Path(output_dir)
+        
+        if self.severity_scores is not None and not self.severity_scores.empty:
+            severity_path = output_path / "severity_scores.csv"
+            self.severity_scores.to_csv(severity_path, index=False, float_format='%.6f')
+            logger.info(f"Saved Severity Scores: {severity_path}")
+        
+        if self.feature_set is not None and not self.feature_set.empty:
+            features_path = output_path / "ml_features.csv"
+            self.feature_set.to_csv(features_path, index=False, float_format='%.6f')
+            logger.info(f"Saved ML feature set: {features_path}")
     
     def _log_summary(self) -> None:
-        """Log analysis summary."""
-        if self.impact_scores is not None and not self.impact_scores.empty:
-            logger.info("\nTop 5 Anomalies:")
-            summary_cols = ['Anomaly_ID', 'Type', 'IS', 'Severity', 'Area_m2', 'Coherence']
-            print(self.impact_scores[summary_cols].head())
+        if self.feature_set is not None and not self.feature_set.empty:
+            logger.info("\n=== Top 5 Anomalies by Combined Importance ===")
+            summary_cols = ['Anomaly_ID', 'Type', 'IS', 'SS', 'Importance']
+            available = [c for c in summary_cols if c in self.feature_set.columns]
+            print(self.feature_set[available].head())
+    
+    def get_feature_set(self) -> pd.DataFrame:
+        """Get complete ML feature set with both IS and SS metrics."""
+        return self.feature_set
     
     def get_impact_scores(self) -> pd.DataFrame:
-        """
-        Get calculated Impact Scores.
-        
-        Returns:
-            DataFrame with Impact Scores and submetrics.
-        """
         return self.impact_scores
     
+    def get_severity_scores(self) -> pd.DataFrame:
+        return self.severity_scores
+    
     def get_classification_map(self):
-        """Get zone classification map."""
         return self._zone_classification
     
     def get_residual_map(self):
-        """Get LST residual map."""
         return self._residual_2d
 
 
-def calculate_impact_scores(
+def calculate_tocantins_index(
     tif_path: str,
     output_dir: str = "output",
     spatial_params: Optional[Dict] = None,
     k_threshold: float = 1.5,
     rf_params: Optional[Dict] = None,
-    impact_params: Optional[Dict] = None
-) -> ImpactScoreCalculator:
+    impact_params: Optional[Dict] = None,
+    severity_params: Optional[Dict] = None
+) -> TocantinsIndexCalculator:
     """
-    Calculate Impact Scores for thermal anomalies in Landsat imagery.
-    
-    A convenience function that creates a calculator and runs the complete analysis.
+    Calculate the Tocantins Index for thermal anomalies in Landsat imagery.
     
     Args:
         tif_path: Path to Landsat GeoTIFF file.
@@ -227,15 +240,17 @@ def calculate_impact_scores(
         k_threshold: Threshold multiplier for residual detection.
         rf_params: Random Forest model parameters.
         impact_params: Impact score calculation parameters.
+        severity_params: Severity score calculation parameters.
         
     Returns:
-        ImpactScoreCalculator instance with computed results.
+        TocantinsIndexCalculator instance with computed results.
     """
-    calculator = ImpactScoreCalculator(
+    calculator = TocantinsIndexCalculator(
         k_threshold=k_threshold,
         spatial_params=spatial_params,
         rf_params=rf_params,
-        impact_params=impact_params
+        impact_params=impact_params,
+        severity_params=severity_params
     )
     calculator.run_complete_analysis(tif_path, output_dir, save_results=True)
     return calculator
