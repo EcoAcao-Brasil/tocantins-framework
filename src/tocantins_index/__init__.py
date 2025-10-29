@@ -29,8 +29,8 @@ __version__ = "1.0.0"
 __author__ = "Isaque Carvalho Borges"
 
 __all__ = [
-    "TocantinsIndexCalculator",
-    "calculate_tocantins_index",
+    "TocantinsFrameworkCalculator"
+    "calculate_tocantins_framework",
     "LandsatPreprocessor",
     "AnomalyDetector",
     "MorphologyProcessor",
