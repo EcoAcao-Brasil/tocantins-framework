@@ -1,5 +1,5 @@
 """
-A 'calculator' that runs the complete Tocantins Index analysis pipeline.
+A 'calculator' that runs the complete Tocantins Framework analysis pipeline.
 
 Integrates preprocessing, anomaly detection, morphology, metrics, and I/O.
 """
@@ -19,12 +19,12 @@ from .io import ResultsWriter
 logger = logging.getLogger(__name__)
 
 
-class TocantinsIndexCalculator:
+class TocantinsFrameworkCalculator:
     """
-    Main calculator for the Tocantins Index analysis.
+    Main calculator for the Tocantins Framework analysis.
     
-    Orchestrates the pipeline from raw Landsat imagery to the final Tocantins Index,
-    which integrates Impact Score and Severity Score.
+    Orchestrates the pipeline from raw Landsat imagery to Impact Score (IS)
+    and Severity Score (SS) metrics for urban heat anomaly characterization.
     """
     
     def __init__(
@@ -60,11 +60,11 @@ class TocantinsIndexCalculator:
     def run_complete_analysis(
         self,
         tif_path: str,
-        output_dir: str = "tocantins_index_results",
+        output_dir: str = "tocantins_framework_results",
         save_results: bool = True
     ) -> bool:
-        """Execute complete Tocantins Index analysis pipeline."""
-        logger.info("Starting Tocantins Index analysis")
+        """Execute complete Tocantins Framework analysis pipeline."""
+        logger.info("Starting Tocantins Framework analysis")
         
         try:
             self._run_pipeline(tif_path)
@@ -137,21 +137,12 @@ class TocantinsIndexCalculator:
         self._merge_feature_set()
     
     def _merge_feature_set(self) -> None:
-        """
-        Merge Impact and Severity scores into unified feature set.
-        
-        Creates a complete feature table for ML applications with all metrics
-        from both IS and SS calculations preserved.
-        """
-        logger.info("Merging features for ML pipeline")
-        
+        """Merge Impact and Severity scores into unified feature set."""
         if self.impact_scores is None or self.impact_scores.empty:
-            logger.warning("No Impact Scores available")
             self.feature_set = pd.DataFrame()
             return
         
         if self.severity_scores is None or self.severity_scores.empty:
-            logger.warning("No Severity Scores available")
             self.feature_set = pd.DataFrame()
             return
         
@@ -162,23 +153,14 @@ class TocantinsIndexCalculator:
             suffixes=('', '_core')
         )
         
-        # Rename for clarity
         merged = merged.rename(columns={
-            'Centroid_Row': 'Centroid_Row',
-            'Centroid_Col': 'Centroid_Col',
             'Centroid_Row_core': 'Core_Centroid_Row',
             'Centroid_Col_core': 'Core_Centroid_Col',
             'Area_m2': 'Influence_Area_m2',
             'Area_pixels': 'Influence_Area_pixels'
         })
         
-        # Sort by combined importance (product of absolute values)
-        merged['Importance'] = np.abs(merged['IS']) * np.abs(merged['SS'])
-        merged = merged.sort_values(by='Importance', ascending=False).reset_index(drop=True)
-        
         self.feature_set = merged
-        
-        logger.info(f"Created feature set with {len(self.feature_set)} anomalies")
     
     def _save_all_results(self, output_dir: str) -> None:
         writer = ResultsWriter(self.raster_meta)
@@ -199,13 +181,10 @@ class TocantinsIndexCalculator:
     
     def _log_summary(self) -> None:
         if self.feature_set is not None and not self.feature_set.empty:
-            logger.info("\n=== Top 5 Anomalies by Combined Importance ===")
-            summary_cols = ['Anomaly_ID', 'Type', 'IS', 'SS', 'Importance']
-            available = [c for c in summary_cols if c in self.feature_set.columns]
-            print(self.feature_set[available].head())
+            logger.info(f"Analysis complete: {len(self.feature_set)} anomalies detected")
     
     def get_feature_set(self) -> pd.DataFrame:
-        """Get complete ML feature set with both IS and SS metrics."""
+        """Get complete feature set with both IS and SS metrics."""
         return self.feature_set
     
     def get_impact_scores(self) -> pd.DataFrame:
@@ -221,7 +200,7 @@ class TocantinsIndexCalculator:
         return self._residual_2d
 
 
-def calculate_tocantins_index(
+def calculate_tocantins_framework(
     tif_path: str,
     output_dir: str = "output",
     spatial_params: Optional[Dict] = None,
@@ -229,9 +208,9 @@ def calculate_tocantins_index(
     rf_params: Optional[Dict] = None,
     impact_params: Optional[Dict] = None,
     severity_params: Optional[Dict] = None
-) -> TocantinsIndexCalculator:
+) -> TocantinsFrameworkCalculator:
     """
-    Calculate the Tocantins Index for thermal anomalies in Landsat imagery.
+    Calculate Impact Score and Severity Score for thermal anomalies in Landsat imagery.
     
     Args:
         tif_path: Path to Landsat GeoTIFF file.
@@ -243,9 +222,9 @@ def calculate_tocantins_index(
         severity_params: Severity score calculation parameters.
         
     Returns:
-        TocantinsIndexCalculator instance with computed results.
+        TocantinsFrameworkCalculator instance with computed results.
     """
-    calculator = TocantinsIndexCalculator(
+    calculator = TocantinsFrameworkCalculator(
         k_threshold=k_threshold,
         spatial_params=spatial_params,
         rf_params=rf_params,
