@@ -53,8 +53,8 @@ class TocantinsFrameworkCalculator:
         self._residual_2d = None
         self._unified_hot_cores = None
         self._unified_cold_cores = None
-        self._coherent_hot_influence = None
-        self._coherent_cold_influence = None
+        self._coherent_hot_eaz = None
+        self._coherent_cold_eaz = None
         self._zone_classification = None
     
     def run_complete_analysis(
@@ -104,8 +104,8 @@ class TocantinsFrameworkCalculator:
         
         training_stats = self.detector.get_training_stats()
         
-        self._coherent_hot_influence, self._coherent_cold_influence = \
-            self.morph_processor.grow_influence_zones(
+        self._coherent_hot_, self._coherent_cold_eaz = \
+            self.morph_processor.grow_eaz_zones(
                 self._unified_hot_cores, self._unified_cold_cores,
                 self._residual_2d, valid_mask_2d,
                 training_stats['residual_std'], self.k_threshold
@@ -113,7 +113,7 @@ class TocantinsFrameworkCalculator:
         
         self._zone_classification = self.morph_processor.create_classification_map(
             lst_2d.shape,
-            self._coherent_cold_influence, self._coherent_hot_influence,
+            self._coherent_cold_eaz, self._coherent_hot_eaz,
             self._unified_cold_cores, self._unified_hot_cores
         )
         
@@ -123,7 +123,7 @@ class TocantinsFrameworkCalculator:
         
         self.impact_scores = self.metrics.calculate_impact_scores(
             self._unified_hot_cores, self._unified_cold_cores,
-            self._coherent_hot_influence, self._coherent_cold_influence,
+            self._coherent_hot_eaz, self._coherent_cold_eaz,
             self._residual_2d, training_stats['residual_std'],
             pixel_size, connectivity
         )
@@ -156,8 +156,8 @@ class TocantinsFrameworkCalculator:
         merged = merged.rename(columns={
             'Centroid_Row_core': 'Core_Centroid_Row',
             'Centroid_Col_core': 'Core_Centroid_Col',
-            'Area_m2': 'Influence_Area_m2',
-            'Area_pixels': 'Influence_Area_pixels'
+            'Area_m2': 'eaz_Area_m2',
+            'Area_pixels': 'eaz_Area_pixels'
         })
         
         self.feature_set = merged
