@@ -90,7 +90,7 @@ class MorphologyProcessor:
         Returns:
             Tuple of (hot EAZs zone mask, cold EAZs zone mask).
         """
-        logger.info("Growing Exteded Anomaly Zones")
+        logger.info("Growing Extended Anomaly Zones")
         
         threshold = k_threshold * residual_std
         

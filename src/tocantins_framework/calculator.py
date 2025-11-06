@@ -104,8 +104,8 @@ class TocantinsFrameworkCalculator:
         
         training_stats = self.detector.get_training_stats()
         
-        self._coherent_hot_, self._coherent_cold_eaz = \
-            self.morph_processor.grow_eaz_zones(
+        self._coherent_hot_eaz, self._coherent_cold_eaz = \
+            self.morph_processor.grow_eaz(
                 self._unified_hot_cores, self._unified_cold_cores,
                 self._residual_2d, valid_mask_2d,
                 training_stats['residual_std'], self.k_threshold
@@ -156,8 +156,8 @@ class TocantinsFrameworkCalculator:
         merged = merged.rename(columns={
             'Centroid_Row_core': 'Core_Centroid_Row',
             'Centroid_Col_core': 'Core_Centroid_Col',
-            'Area_m2': 'eaz_Area_m2',
-            'Area_pixels': 'eaz_Area_pixels'
+            'Area_m2': 'EAZ_Area_m2',
+            'Area_pixels': 'EAZ_Area_pixels'
         })
         
         self.feature_set = merged

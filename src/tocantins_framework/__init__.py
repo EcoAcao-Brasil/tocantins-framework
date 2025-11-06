@@ -5,7 +5,7 @@ A feature extraction toolkit for detecting and quantifying intra-urban heat anom
 in Landsat imagery using machine learning and spatial analysis.
 
 The framework produces two complementary metrics:
-- Impact Score (IS): Quantifies thermal influence over surroundings
+- Impact Score (IS): Quantifies spatial extent and thermal significance of Extended Anomaly Zones (EAZs)
 - Severity Score (SS): Quantifies thermal anomalousness of the core
 
 These metrics provide rich features for AI-driven urban heat intervention planning.
@@ -13,7 +13,7 @@ These metrics provide rich features for AI-driven urban heat intervention planni
 Components:
 - Preprocessing: Landsat band extraction and spectral index calculation
 - Anomaly Detection: Statistical and ML-based thermal anomaly detection
-- Morphology: Spatial operations for cores and influence zones
+- Morphology: Spatial operations for cores and EAZs
 - Metrics: Impact Score and Severity Score calculation
 - Calculator: Complete feature extraction pipeline
 """
