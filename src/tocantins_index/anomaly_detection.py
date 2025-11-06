@@ -21,10 +21,11 @@ class AnomalyDetector:
     """
     
     DEFAULT_RF_PARAMS = {
-        'n_estimators': 100,
-        'max_depth': 20,
-        'min_samples_split': 10,
-        'min_samples_leaf': 5,
+        'n_estimators': 200,
+        'max_depth': 25,
+        'min_samples_split': 8,
+        'min_samples_leaf': 4,
+        'max_features' = 'sqrt',
         'random_state': 42,
         'n_jobs': -1
     }
