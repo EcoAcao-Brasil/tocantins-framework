@@ -20,12 +20,12 @@ class MetricsCalculator:
     """
     Unified calculator for Impact Score (IS) and Severity Score (SS).
     
-    Impact Score: Quantifies thermal influence over surroundings
+    Impact Score: Quantifies the spatial extent and thermal significance of the Extended Anomaly Zone (EAZ)
     Severity Score: Quantifies thermal anomalousness of the core itself
     """
     
     DEFAULT_PARAMS = {
-        'min_influence_pixels': 1,
+        'min_eaz_pixels': 1,
         'min_core_pixels': 1,
         'std_floor_degC': 0.05
     }
@@ -43,8 +43,8 @@ class MetricsCalculator:
         self,
         hot_cores: np.ndarray,
         cold_cores: np.ndarray,
-        hot_influence: np.ndarray,
-        cold_influence: np.ndarray,
+        hot_eaz: np.ndarray,
+        cold_eaz: np.ndarray,
         residual_2d: np.ndarray,
         residual_std: float,
         pixel_size_m: float,
@@ -56,12 +56,12 @@ class MetricsCalculator:
         self.compute_gradient_map(residual_2d)
         
         hot_scores = self._score_impact(
-            hot_cores, hot_influence, 'hot',
+            hot_cores, hot_eaz, 'hot',
             residual_2d, residual_std, pixel_size_m, connectivity
         )
         
         cold_scores = self._score_impact(
-            cold_cores, cold_influence, 'cold',
+            cold_cores, cold_eaz, 'cold',
             residual_2d, residual_std, pixel_size_m, connectivity
         )
         
@@ -108,7 +108,7 @@ class MetricsCalculator:
     def _score_impact(
         self,
         cores_mask: np.ndarray,
-        influence_mask: np.ndarray,
+        eaz_mask: np.ndarray,
         anomaly_type: str,
         residual_2d: np.ndarray,
         residual_std: float,
@@ -120,7 +120,7 @@ class MetricsCalculator:
             return pd.DataFrame()
         
         labeled_cores = measure.label(cores_mask, connectivity=connectivity)
-        full_anomalies_mask = cores_mask | influence_mask
+        full_anomalies_mask = cores_mask | eaz_mask
         labeled_full = measure.label(full_anomalies_mask, connectivity=connectivity)
         
         core_regions = measure.regionprops(labeled_cores)
@@ -134,10 +134,10 @@ class MetricsCalculator:
                 continue
             
             full_mask = (labeled_full == full_label)
-            influence_only = full_mask & influence_mask
+            eaz_only = full_mask & eaz_mask
             
             score_dict = self._calculate_impact_single(
-                residual_2d, full_mask, influence_only, residual_std, pixel_size_m
+                residual_2d, full_mask, eaz_only, residual_std, pixel_size_m
             )
             
             if score_dict is None:
@@ -224,7 +224,7 @@ class MetricsCalculator:
         self,
         residual_2d: np.ndarray,
         full_anomaly_mask: np.ndarray,
-        influence_only_mask: np.ndarray,
+        eaz_only_mask: np.ndarray,
         residual_std: float,
         pixel_size_m: float
     ) -> Optional[Dict]:
@@ -235,14 +235,14 @@ class MetricsCalculator:
         
         where:
             severity = |median(ΔT)| / σ_residual
-            area = influence zone area (m²)
+            area = EAZ area (m²)
             continuity = 1 / (1 + mean_boundary_gradient)
         """
-        min_pixels = self.params['min_influence_pixels']
+        min_pixels = self.params['min_eaz_pixels']
         std_floor = self.params['std_floor_degC']
         
-        pixels_in_influence = residual_2d[influence_only_mask]
-        n_pixels = pixels_in_influence.size
+        pixels_in_eaz = residual_2d[eaz_only_mask]
+        n_pixels = pixels_in_eaz.size
 
         if n_pixels < min_pixels:
             return {
@@ -255,7 +255,7 @@ class MetricsCalculator:
         pixel_area_m2 = pixel_size_m ** 2
         area_m2 = n_pixels * pixel_area_m2
         
-        median_delta_t = np.median(pixels_in_influence)
+        median_delta_t = np.median(pixels_in_eaz)
         
         sigma = np.maximum(residual_std, std_floor)
         severity = np.abs(median_delta_t) / sigma
