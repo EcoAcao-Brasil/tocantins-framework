@@ -25,7 +25,7 @@ class AnomalyDetector:
         'max_depth': 25,
         'min_samples_split': 8,
         'min_samples_leaf': 4,
-        'max_features' = 'sqrt',
+        'max_features': 'sqrt',
         'random_state': 42,
         'n_jobs': -1
     }
