@@ -1,7 +1,7 @@
 """
 Morphological operations for spatial anomaly processing.
 
-Handles anomaly core refinement and defines influence zones.
+Handles anomaly core refinement and defines Extended Anomaly Zones (EAZs).
 """
 
 import logging
@@ -67,7 +67,7 @@ class MorphologyProcessor:
         
         return unified_hot, unified_cold, hot_labels, cold_labels
     
-    def grow_influence_zones(
+    def grow_eaz(
         self,
         hot_cores: np.ndarray,
         cold_cores: np.ndarray,
@@ -77,7 +77,7 @@ class MorphologyProcessor:
         k_threshold: float
     ) -> Tuple[np.ndarray, np.ndarray]:
         """
-        Define spatially coherent influence zones around anomaly cores.
+        Define spatially coherent Extended Anomaly Zones around anomaly cores.
         
         Args:
             hot_cores: Hot anomaly core mask.
@@ -88,9 +88,9 @@ class MorphologyProcessor:
             k_threshold: Threshold multiplier.
             
         Returns:
-            Tuple of (hot influence zone mask, cold influence zone mask).
+            Tuple of (hot EAZs zone mask, cold EAZs zone mask).
         """
-        logger.info("Growing influence zones")
+        logger.info("Growing Exteded Anomaly Zones")
         
         threshold = k_threshold * residual_std
         
@@ -105,16 +105,16 @@ class MorphologyProcessor:
             ~cold_cores
         )
         
-        hot_influence = self._grow_zone(hot_cores, potential_hot)
-        cold_influence = self._grow_zone(cold_cores, potential_cold)
+        hot_eaz = self._grow_zone(hot_cores, potential_hot)
+        cold_eaz = self._grow_zone(cold_cores, potential_cold)
         
-        return hot_influence, cold_influence
+        return hot_eaz, cold_eaz
     
     def create_classification_map(
         self,
         shape: Tuple[int, int],
-        cold_influence: np.ndarray,
-        hot_influence: np.ndarray,
+        cold_eaz: np.ndarray,
+        hot_eaz: np.ndarray,
         cold_cores: np.ndarray,
         hot_cores: np.ndarray
     ) -> np.ndarray:
@@ -123,20 +123,20 @@ class MorphologyProcessor:
         
         Args:
             shape: Output array shape.
-            cold_influence: Cold influence zone mask.
-            hot_influence: Hot influence zone mask.
+            cold_eaz: Cold EAZs zone mask.
+            hot_eaz: Hot EAZs zone mask.
             cold_cores: Cold anomaly core mask.
             hot_cores: Hot anomaly core mask.
             
         Returns:
-            Classification map (0=background, 1=cold influence, 2=hot influence,
+            Classification map (0=background, 1=cold eaz, 2=hot eaz,
                               3=cold core, 4=hot core).
         """
         logger.info("Creating classification map")
         
         classification = np.zeros(shape, dtype=np.uint8)
-        classification[cold_influence] = 1
-        classification[hot_influence] = 2
+        classification[cold_eaz] = 1
+        classification[hot_eaz] = 2
         classification[cold_cores] = 3
         classification[hot_cores] = 4
         
@@ -171,29 +171,29 @@ class MorphologyProcessor:
     def _grow_zone(
         self,
         cores: np.ndarray,
-        potential_influence: np.ndarray
+        potential_eaz: np.ndarray
     ) -> np.ndarray:
         """
-        Grow an influence zone from anomaly cores.
+        Grow an EAZ from anomaly cores.
         
         Args:
             cores: Binary mask of anomaly cores.
-            potential_influence: Binary mask of potential influence pixels.
+            potential_eaz: Binary mask of potential EAZ pixels.
             
         Returns:
-            Binary mask of the influence zone.
+            Binary mask of the EAZs.
         """
         if not np.any(cores):
             return np.zeros_like(cores, dtype=bool)
         
-        all_anomalies = cores | potential_influence
+        all_anomalies = cores | potential_eaz
         labeled_zones, _ = ndimage.label(all_anomalies)
         core_blob_labels = np.unique(labeled_zones[cores])
         connected_mask = np.isin(labeled_zones, core_blob_labels)
-        influence_zone = connected_mask & ~cores
+        eaz = connected_mask & ~cores
         
         smoothing_kernel = morphology.disk(1)
-        influence_zone = morphology.binary_closing(influence_zone, smoothing_kernel)
-        influence_zone = morphology.binary_opening(influence_zone, smoothing_kernel)
+        eaz = morphology.binary_closing(eaz, smoothing_kernel)
+        eaz = morphology.binary_opening(eaz, smoothing_kernel)
         
-        return influence_zone
+        return eaz
