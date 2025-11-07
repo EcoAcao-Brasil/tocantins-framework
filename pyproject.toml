@@ -1,52 +1,170 @@
-# pyproject.toml
-
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "tocantins_framework"
+name = "tocantins-framework"
 version = "1.0.0"
-authors = [
-  { name="Isaque Carvalho Borges", email="isaque@ecoacaobrasil.org" },
-]
-description = "A package for the calculation of the Tocantins Index, a compounded metric of intra-urban heat anomalies in Landsat imagery."
+description = "A comprehensive framework for detecting and quantifying intra-urban thermal anomalies in Landsat imagery using machine learning and spatial analysis"
 readme = "README.md"
 requires-python = ">=3.8"
-license = { text = "MIT License" }
+license = {text = "MIT"}
+authors = [
+    {name = "Isaque Carvalho Borges", email = "isaque@ecoacaobrasil.org"}
+]
+maintainers = [
+    {name = "EcoAção Brasil", email = "isaque@ecoacaobrasil.org"}
+]
+keywords = [
+    "urban heat island",
+    "thermal anomaly detection",
+    "landsat",
+    "remote sensing",
+    "machine learning",
+    "spatial analysis",
+    "climate adaptation",
+    "urban planning",
+    "environmental monitoring"
+]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
     "Topic :: Scientific/Engineering :: GIS",
+    "Topic :: Scientific/Engineering :: Atmospheric Science",
+    "Topic :: Scientific/Engineering :: Image Processing",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
-]
-dependencies = [
-    "numpy>=1.21.0",
-    "pandas>=1.3.0",
-    "rasterio>=1.2.0",
-    "scikit-learn>=1.0.0",
-    "scikit-image>=0.18.0",
-    "scipy>=1.7.0",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+    "Natural Language :: English",
 ]
 
-[project.urls]
-Homepage = "https://github.com/EcoAcao-Brasil/Tocantins-Index"
-"Bug Reports" = "https://github.com/EcoAcao-Brasil/Tocantins-Index/issues"
-Source = "https://github.com/EcoAcao-Brasil/Tocantins-Index"
+dependencies = [
+    "numpy>=1.21.0,<2.0.0",
+    "pandas>=1.3.0,<3.0.0",
+    "rasterio>=1.2.0,<2.0.0",
+    "scikit-learn>=1.0.0,<2.0.0",
+    "scikit-image>=0.18.0,<1.0.0",
+    "scipy>=1.7.0,<2.0.0",
+]
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=6.0",
-    "pytest-cov>=2.0",
-    "black>=21.0",
-    "flake8>=3.9",
-    "mypy>=0.900",
+    "pytest>=7.0.0",
+    "pytest-cov>=3.0.0",
+    "black>=22.0.0",
+    "flake8>=4.0.0",
+    "mypy>=0.950",
+    "isort>=5.10.0",
+    "pre-commit>=2.17.0",
 ]
+docs = [
+    "sphinx>=4.5.0",
+    "sphinx-rtd-theme>=1.0.0",
+    "sphinxcontrib-napoleon>=0.7",
+]
+viz = [
+    "matplotlib>=3.5.0",
+    "seaborn>=0.11.0",
+]
+all = [
+    "tocantins-framework[dev,docs,viz]",
+]
+
+[project.urls]
+Homepage = "https://github.com/EcoAcao-Brasil/tocantins-framework"
+Repository = "https://github.com/EcoAcao-Brasil/tocantins-framework.git"
+Changelog = "https://github.com/EcoAcao-Brasil/Tocantins-Framework/blob/main/CHANGELOG.md"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
+zip-safe = false
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["tocantins_framework*"]
+exclude = ["tests*"]
+
+[tool.setuptools.package-data]
+tocantins_framework = ["py.typed"]
+
+[tool.black]
+line-length = 100
+target-version = ['py38', 'py39', 'py310', 'py311']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 100
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "--cov=tocantins_framework",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+    "--cov-report=xml",
+]
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+check_untyped_defs = true
+disallow_untyped_calls = false
+disallow_untyped_decorators = false
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+follow_imports = "normal"
+ignore_missing_imports = true
+
+[tool.coverage.run]
+source = ["src"]
+omit = [
+    "*/tests/*",
+    "*/test_*.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "@abstractmethod",
+]

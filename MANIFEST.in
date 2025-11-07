@@ -1,0 +1,25 @@
+# Include documentation files
+include README.md
+include LICENSE
+include CHANGELOG.md
+include CONTRIBUTING.md
+
+# Include configuration files
+include pyproject.toml
+include setup.py
+
+# Include type stubs
+include src/tocantins_framework/py.typed
+
+# Exclude development and build artifacts
+global-exclude __pycache__
+global-exclude *.py[cod]
+global-exclude *.so
+global-exclude .DS_Store
+global-exclude *.ipynb_checkpoints
+
+# Exclude test and development files from distribution
+prune tests
+prune docs/_build
+prune .git
+prune .github
