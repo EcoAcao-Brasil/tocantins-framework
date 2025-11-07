@@ -39,7 +39,6 @@ jobs:
 
     environment:
       name: pypi
-      # Corrected the URL to use your package name 'tocantins-framework'
       url: https://pypi.org/p/tocantins-framework
 
     steps:
