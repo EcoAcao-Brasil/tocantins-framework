@@ -34,13 +34,12 @@ jobs:
     needs:
       - release-build
     permissions:
-      # IMPORTANT: this permission is mandatory for trusted publishing
       id-token: write
 
     environment:
       name: pypi
       url: https://pypi.org/p/tocantins-framework
-
+    
     steps:
       - name: Download all release distributions
         uses: actions/download-artifact@v4
