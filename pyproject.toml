@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tocantins-framework"
-version = "1.0.0"
+version = "1.0.1"
 description = "A comprehensive framework for detecting and quantifying intra-urban thermal anomalies in Landsat imagery using machine learning and spatial analysis"
 readme = "README.md"
 requires-python = ">=3.8"
