@@ -5,9 +5,19 @@ All notable changes to the Tocantins Framework will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.0] - 2025-11-06
+## [1.0.1] - 2025-11-06
 
-### Added
+### Changes
+- Update dependency version constraints in pyproject.toml
+- Removed upper version limits for several dependencies.
+
+
+---
+
+## Version History
+### [1.0.0] - 2025-11-06
+
+#### Added
 - Initial public release of the Tocantins Framework
 - Complete preprocessing pipeline for Landsat 8/9 Level-2 Collection 2 imagery
 - Two-stage anomaly detection (statistical + machine learning)
@@ -23,22 +33,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Type hints throughout codebase
 - Professional logging system
 
-### Features
+#### Features
 - Modular architecture for scientific reproducibility
 - Configurable parameters for different urban contexts
 - Efficient processing of large Landsat scenes
 - Standardized metrics for comparative analysis
 - Rich metadata in output files
 
-### Documentation
+#### Documentation
 - README with quick start guide
 - Contributing guidelines
 - Example notebooks (to be added)
 - Scientific methodology documentation
-
----
-
-## Version History
 
 ## Upcoming Features
 
