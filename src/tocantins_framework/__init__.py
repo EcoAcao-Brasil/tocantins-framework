@@ -76,7 +76,7 @@ ResultsWriter : class
 
 Version Information
 -------------------
-:Version: 1.0.0
+:Version: 1.0.1
 :Author: Isaque Carvalho Borges
 :Organization: EcoAção Brasil
 :License: MIT
@@ -94,7 +94,7 @@ from .metrics import MetricsCalculator
 from .io import ResultsWriter
 
 # Version and metadata
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 __author__ = "Isaque Carvalho Borges"
 __email__ = "isaque@ecoacaobrasil.org"
 __organization__ = "EcoAção Brasil"
