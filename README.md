@@ -4,7 +4,7 @@ A comprehensive Python framework for detecting and quantifying intra-urban therm
 
 ## Overview
 
-The Tocantins Framework provides researchers and practitioners with robust tools for analyzing urban heat islands and thermal anomalies using Landsat 8/9 satellite imagery. The framework implements a scientifically rigorous methodology combining statistical analysis, machine learning, and spatial morphology to produce two complementary metrics:
+The Tocantins Framework provides researchers and practitioners with robust tools for analyzing urban heat islands and thermal anomalies using Landsat satellite imagery. The framework implements a scientifically rigorous methodology combining statistical analysis, machine learning, and spatial morphology to produce two complementary metrics:
 
 - **Impact Score (IS)**: Quantifies the spatial extent and thermal significance of Extended Anomaly Zones (EAZs)
 - **Severity Score (SS)**: Quantifies the thermal intensity of anomaly cores
@@ -13,11 +13,13 @@ These metrics enable data-driven urban heat intervention planning and climate ad
 
 ## Key Features
 
-- **Automated Processing Pipeline**: End-to-end analysis from raw Landsat imagery to actionable metrics
+- **Multi-Landsat Support**: Works with Landsat 5, 7, 8, and 9 Level-2 Collection 2 imagery
+- **Flexible Band Mapping**: User-defined or automatic band configuration
+- **Automated Processing Pipeline**: End-to-end analysis from raw imagery to actionable metrics
 - **Machine Learning Integration**: Random Forest-based residual analysis for robust anomaly detection
 - **Spatial Coherence**: Morphological operations ensure spatially meaningful anomaly delineation
 - **Standardized Metrics**: Reproducible, comparable thermal anomaly quantification
-- **Flexible Configuration**: Customizable parameters for different urban contexts
+- **Configurable Parameters**: Customizable for different urban contexts
 - **Scientific Rigor**: Implements peer-reviewed methodologies with full transparency
 
 ## Installation
@@ -44,24 +46,48 @@ pip install -e ".[dev]"
 
 ## Quick Start
 
-### Basic Usage
+### Landsat 8/9 (Default)
 
 ```python
 from tocantins_framework import calculate_tocantins_framework
 
-# Run complete analysis on Landsat imagery
+# Run complete analysis on Landsat 8/9 imagery
 calculator = calculate_tocantins_framework(
-    tif_path="path/to/landsat_image.tif",
+    tif_path="path/to/LC08_scene.tif",
     output_dir="results"
 )
 
 # Access results
 feature_set = calculator.get_feature_set()
-impact_scores = calculator.get_impact_scores()
-severity_scores = calculator.get_severity_scores()
+print(feature_set[['Anomaly_ID', 'Type', 'IS', 'SS']])
 ```
 
-### Advanced Usage
+### Landsat 5/7 (Custom Mapping)
+
+```python
+from tocantins_framework import calculate_tocantins_framework
+
+# Define Landsat 5 band mapping
+l5_mapping = {
+    'blue': 'SR_B1',
+    'green': 'SR_B2',
+    'red': 'SR_B3',
+    'nir': 'SR_B4',
+    'swir1': 'SR_B5',
+    'swir2': 'SR_B7',
+    'thermal': 'ST_B6',
+    'qa_pixel': 'QA_PIXEL'
+}
+
+# Run analysis with custom band mapping
+calculator = calculate_tocantins_framework(
+    tif_path="path/to/LT05_scene.tif",
+    band_mapping=l5_mapping,
+    output_dir="results"
+)
+```
+
+### Advanced Configuration
 
 ```python
 from tocantins_framework import TocantinsFrameworkCalculator
@@ -88,33 +114,52 @@ calculator = TocantinsFrameworkCalculator(
 
 # Run analysis
 success = calculator.run_complete_analysis(
-    tif_path="path/to/landsat_image.tif",
+    tif_path="path/to/landsat_scene.tif",
     output_dir="results",
     save_results=True
 )
-
-if success:
-    # Access intermediate results
-    residual_map = calculator.get_residual_map()
-    classification_map = calculator.get_classification_map()
 ```
 
 ## Input Data Requirements
 
-The framework expects Landsat 8/9 Level-2 Collection 2 GeoTIFF files with the following bands:
+### Supported Satellites
+- **Landsat 8/9**: Works out-of-the-box (default configuration)
+- **Landsat 5/7**: Requires custom band mapping
 
-- **SR_B1-B7**: Surface Reflectance bands
-- **ST_B10**: Thermal band (Surface Temperature)
-- **QA_PIXEL**: Quality Assessment band
-- Additional QA and metadata bands
+### Data Format
+Landsat Level-2 Collection 2 GeoTIFF files containing:
+- Surface Reflectance bands (Blue, Green, Red, NIR, SWIR1, SWIR2)
+- Surface Temperature band (Thermal)
+- Quality Assessment band (QA_PIXEL)
 
-Data can be obtained from:
+### Data Sources
 - [USGS Earth Explorer](https://earthexplorer.usgs.gov/)
 - [Google Earth Engine](https://earthengine.google.com/)
 
-## Output Files
+## Band Mapping Reference
 
-The framework generates several output files:
+### Landsat 8/9 (Default)
+No configuration needed - automatic detection.
+
+### Landsat 5
+```python
+{
+    'blue': 'SR_B1', 'green': 'SR_B2', 'red': 'SR_B3',
+    'nir': 'SR_B4', 'swir1': 'SR_B5', 'swir2': 'SR_B7',
+    'thermal': 'ST_B6', 'qa_pixel': 'QA_PIXEL'
+}
+```
+
+### Landsat 7
+```python
+{
+    'blue': 'SR_B1', 'green': 'SR_B2', 'red': 'SR_B3',
+    'nir': 'SR_B4', 'swir1': 'SR_B5', 'swir2': 'SR_B7',
+    'thermal': 'ST_B6', 'qa_pixel': 'QA_PIXEL'
+}
+```
+
+## Output Files
 
 ### CSV Files
 - `ml_features.csv`: Complete feature set with IS and SS metrics
@@ -123,8 +168,20 @@ The framework generates several output files:
 - `severity_scores.csv`: Core-level Severity Scores
 
 ### GeoTIFF Files
-- `anomaly_classification.tif`: Spatial classification map (0=background, 1=cold EAZ, 2=hot EAZ, 3=cold core, 4=hot core)
+- `anomaly_classification.tif`: Spatial classification map
+  - 0 = Background
+  - 1 = Cold EAZ
+  - 2 = Hot EAZ
+  - 3 = Cold Core
+  - 4 = Hot Core
 - `lst_residuals.tif`: Land Surface Temperature residuals
+
+## Examples
+
+See the `examples/` directory for detailed usage examples:
+- `basic_landsat8_analysis.py` - Simple Landsat 8/9 analysis
+- `landsat5_custom_mapping.py` - Landsat 5 with custom bands
+- `advanced_configuration.py` - Full parameter customization
 
 ## Methodology
 
@@ -153,14 +210,6 @@ The framework generates several output files:
    - Impact Score: IS = sign(ΔT) × log(1 + severity × area × continuity)
    - Severity Score: SS = sign(ΔT) × log(1 + thermal_intensity × area)
 
-### Scientific Foundation
-
-The framework implements methodologies described in:
-
-> [Paper citation still to be added after publication]
-
-Key parameters are validated through empirical testing and sensitivity analysis.
-
 ## Configuration Parameters
 
 ### Spatial Parameters
@@ -170,7 +219,7 @@ spatial_params = {
     'min_anomaly_size': 1,          # Minimum pixels for valid anomaly
     'agglutination_distance': 4,    # Dilation radius for core merging
     'morphology_kernel_size': 3,    # Morphological operation kernel size
-    'connectivity': 2                # Pixel connectivity (1=4-connected, 2=8-connected)
+    'connectivity': 2                # Pixel connectivity (1=4-conn, 2=8-conn)
 }
 ```
 
@@ -213,15 +262,6 @@ rf_params = {
 
 We welcome contributions from the scientific community! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-### Development Setup
-
-```bash
-git clone https://github.com/EcoAcao-Brasil/tocantins-framework
-cd tocantins-framework
-pip install -e ".[dev]"
-pytest tests/
-```
-
 ## Citation
 
 If you use this framework in your research, please cite:
@@ -246,6 +286,7 @@ Developed by [EcoAção Brasil](https://ecoacaobrasil.org) to support climate re
 
 ## Support
 
+- **Issues**: https://github.com/EcoAcao-Brasil/tocantins-framework/issues
 - **Email**: isaque@ecoacaobrasil.org
 
 ## Changelog
