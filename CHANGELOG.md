@@ -5,19 +5,44 @@ All notable changes to the Tocantins Framework will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.1] - 2026-01-11
+## [1.1.0] - 2026-01-16
 
-### Changes
-- Update dependency version constraints in pyproject.toml
-- Removed upper version limits for several dependencies.
+### Added
+- **Multi-Landsat Support**: Framework now supports Landsat 5, 7, 8, and 9
+  - User-defined band mapping via `band_mapping` parameter
+  - Automatic band detection by description instead of position
+  - Backward compatible: Landsat 8/9 works without configuration
+- Examples directory with practical usage demonstrations
+  - Basic Landsat 8 analysis example
+  - Landsat 5 custom band mapping example
+  - Advanced configuration example with all parameters
 
+### Changed
+- `LandsatPreprocessor`: Now accepts optional `band_mapping` parameter in `__init__`
+- `TocantinsFrameworkCalculator`: Added `band_mapping` parameter to constructor
+- `calculate_tocantins_framework()`: Added `band_mapping` parameter
+- Band extraction now uses band descriptions instead of hardcoded indices
+
+### Technical Details
+- Removed `BAND_INDICES` constant from `LandsatPreprocessor`
+- Added `DEFAULT_BAND_MAPPING` for Landsat 8/9 compatibility
+- Added validation for required bands in custom mappings
+- Enhanced thermal band validation with warnings for unexpected value ranges
+- Improved logging for band mapping diagnostics
 
 ---
 
-## Version History
-### [1.0.0] - 2025-11-06
+## [1.0.1] - 2026-01-11
 
-#### Added
+### Changed
+- Update dependency version constraints in pyproject.toml
+- Removed upper version limits for several dependencies
+
+---
+
+## [1.0.0] - 2025-11-06
+
+### Added
 - Initial public release of the Tocantins Framework
 - Complete preprocessing pipeline for Landsat 8/9 Level-2 Collection 2 imagery
 - Two-stage anomaly detection (statistical + machine learning)
@@ -33,29 +58,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Type hints throughout codebase
 - Professional logging system
 
-#### Features
+### Features
 - Modular architecture for scientific reproducibility
 - Configurable parameters for different urban contexts
 - Efficient processing of large Landsat scenes
 - Standardized metrics for comparative analysis
 - Rich metadata in output files
 
-#### Documentation
+### Documentation
 - README with quick start guide
 - Contributing guidelines
-- Example notebooks (to be added)
 - Scientific methodology documentation
-
-## Upcoming Features
 
 ---
 
-## Notes
+## Deprecation Policy
 
-### Deprecation Policy
 We follow semantic versioning. Breaking changes will only be introduced in major version updates (e.g., 1.x.x → 2.0.0) and will be announced at least one minor version in advance.
 
-### Support
+## Support
+
 - v1.x.x: Full support with bug fixes and feature updates
 
 ---
