@@ -29,6 +29,7 @@ class TocantinsFrameworkCalculator:
     
     def __init__(
         self,
+        band_mapping: Optional[Dict[str, str]] = None,
         rf_params: Optional[Dict] = None,
         k_threshold: float = 1.5,
         spatial_params: Optional[Dict] = None,
@@ -37,7 +38,7 @@ class TocantinsFrameworkCalculator:
     ):
         self.k_threshold = k_threshold
         
-        self.preprocessor = LandsatPreprocessor()
+        self.preprocessor = LandsatPreprocessor(band_mapping=band_mapping)
         self.detector = AnomalyDetector(k_threshold, rf_params)
         self.morph_processor = MorphologyProcessor(spatial_params)
         self.metrics = MetricsCalculator(impact_params or severity_params)
@@ -203,6 +204,7 @@ class TocantinsFrameworkCalculator:
 def calculate_tocantins_framework(
     tif_path: str,
     output_dir: str = "output",
+    band_mapping: Optional[Dict[str, str]] = None,
     spatial_params: Optional[Dict] = None,
     k_threshold: float = 1.5,
     rf_params: Optional[Dict] = None,
@@ -215,6 +217,7 @@ def calculate_tocantins_framework(
     Args:
         tif_path: Path to Landsat GeoTIFF file.
         output_dir: Output directory path.
+        band_mapping: Custom band mapping for different Landsat versions.
         spatial_params: Spatial processing parameters.
         k_threshold: Threshold multiplier for residual detection.
         rf_params: Random Forest model parameters.
@@ -225,6 +228,7 @@ def calculate_tocantins_framework(
         TocantinsFrameworkCalculator instance with computed results.
     """
     calculator = TocantinsFrameworkCalculator(
+        band_mapping=band_mapping,
         k_threshold=k_threshold,
         spatial_params=spatial_params,
         rf_params=rf_params,
